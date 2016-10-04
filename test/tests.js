@@ -16,6 +16,14 @@ var get = function(date, signature) {
       }).type("json").send();
 };
 
+var getNoHeader = function(date, signature) {
+  return unirest.get("http://localhost:8000/")
+      .headers({
+        "date": date,
+        "host": "headers.jsontest.com"
+      }).type("json").send();
+};
+
 describe("kong", function(done) {
   describe("GET", function(done) {
     it('should return 200 OK', function(done) {
@@ -24,6 +32,31 @@ describe("kong", function(done) {
 
       get(date, signature).end(function(response) {
         expect(response.code).to.equal(200);
+        done();
+      });
+    });
+  });
+
+  describe("bad date", function(done) {
+    it('should return a 403 Forbidden', function(done) {
+      var badDate = "Mon, 20 Aug 2011 14:38:05 GMT";
+      var signing_string = "date: " + badDate;
+      var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA1(signing_string, "badsecret"));
+
+      get(badDate, signature).end(function(response) {
+        expect(response.code).to.equal(403);
+        done();
+      });
+    });
+  });
+
+  describe("Missing authorization header", function(done) {
+    it('should return a 401 Unauthorized', function(done) {
+      var signing_string = "date: Mon, 20 Aug 2011 14:38:05 GMT";
+      var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA1(signing_string, secret));
+
+      getNoHeader(date, signature).end(function(response) {
+        expect(response.code).to.equal(401);
         done();
       });
     });
