@@ -7,19 +7,35 @@ var secret = 'andrewsecret';
 
 var date = new Date().toUTCString();
 
+var get = function(date, signature) {
+  return unirest.get("http://localhost:8000/")
+      .headers({
+        "authorization": "hmac username=\"andrew\", algorithm=\"hmac-sha1\", headers=\"date\", signature=\"" + signature + "\"",
+        "date": date,
+        "host": "headers.jsontest.com"
+      }).type("json").send();
+};
+
 describe("kong", function(done) {
   describe("GET", function(done) {
     it('should return 200 OK', function(done) {
       var signing_string = "date: " + date;
       var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA1(signing_string, secret));
 
-      unirest.get("http://localhost:8000/")
-      .headers({
-        "authorization": "hmac username=\"andrew\", algorithm=\"hmac-sha1\", headers=\"date\", signature=\"" + signature + "\"",
-        "date": date,
-        "host": "headers.jsontest.com"
-      }).type("json").send().end(function(response) {
+      get(date, signature).end(function(response) {
         expect(response.code).to.equal(200);
+        done();
+      });
+    });
+  });
+
+  describe("bad signature", function(done) {
+    it('should return a 403 Forbidden', function(done) {
+      var signing_string = "date: " + date;
+      var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA1(signing_string, "badsecret"));
+
+      get(date, signature).end(function(response) {
+        expect(response.code).to.equal(403);
         done();
       });
     });
