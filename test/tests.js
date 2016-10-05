@@ -41,7 +41,7 @@ describe("kong", function(done) {
     it('should return a 403 Forbidden', function(done) {
       var badDate = "Mon, 20 Aug 2011 14:38:05 GMT";
       var signing_string = "date: " + badDate;
-      var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA1(signing_string, "badsecret"));
+      var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA1(signing_string, secret));
 
       get(badDate, signature).end(function(response) {
         expect(response.code).to.equal(403);
